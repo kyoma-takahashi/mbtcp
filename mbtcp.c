@@ -5,6 +5,7 @@
 #include <string.h>
 #include <modbus.h>
 #include <errno.h>
+#include <signal.h>
 
 #define NSEC_PER_SEC (1000000000) /* The number of nsecs per sec. */
 
@@ -13,10 +14,15 @@
 modbus_t *mb_ctx;
 int num_registers = 0;
 uint16_t communication_counter = 0;
+volatile sig_atomic_t sigint = 0;
 
 void usage(void) {
   fprintf(stderr, "Arguments: ip_address port interval_ns number_registers\n");
   exit(-1);  
+}
+
+void handle_signal(int signal) {
+  sigint = 1;
 }
 
 void rt_begin(void) {
@@ -36,7 +42,7 @@ void mb_begin(char* ip, int port) {
   }
   fprintf(stderr, "Done modbus_new_tcp()\n");
 
-/*   modbus_set_debug(mb_ctx, 1); */
+  /*   modbus_set_debug(mb_ctx, 1); */
 
   if (modbus_connect(mb_ctx) == -1) {
     fprintf(stderr, "Failed in modbus_connect(): %s\n", modbus_strerror(errno));
@@ -69,7 +75,7 @@ void mb_rw(void) {
   addr = 0;
   nb_r = num_registers;
   while(nb_r > 0) {
-/*     fprintf(stderr, "(%d, %d)\n", addr, nb_r); */
+    /*     fprintf(stderr, "(%d, %d)\n", addr, nb_r); */
     if (nb_r > MAX_NUM_REGISTERS) {
       nb = MAX_NUM_REGISTERS;
     } else {
@@ -83,10 +89,10 @@ void mb_rw(void) {
       fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
     } else {
       data_len = sizeof(uint16_t) * rc;
-/*       fprintf(stderr, "Read: %ld x %d = %d\n", sizeof(uint16_t), rc, data_len); */
+      /*       fprintf(stderr, "Read: %ld x %d = %d\n", sizeof(uint16_t), rc, data_len); */
       fwrite(&data_len, sizeof(unsigned short int), 1, stdout);
       fwrite(&tab_reg, sizeof(uint16_t), rc, stdout);
-/*       fprintf(stderr, "Wrote: %d => %ld\n", rc, wrote); */
+      /*       fprintf(stderr, "Wrote: %d => %ld\n", rc, wrote); */
     }
 
     nb_r -= nb;
@@ -96,9 +102,9 @@ void mb_rw(void) {
   fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
 
   communication_counter++;
-/*   tab_reg_out[0] = ((communication_counter & 0xff) << 8) | ((communication_counter >> 8) & 0xff); */
+  /*   tab_reg_out[0] = ((communication_counter & 0xff) << 8) | ((communication_counter >> 8) & 0xff); */
   tab_reg_out[0] = communication_counter;
-/*   fprintf(stderr, "Counter: %d\n", communication_counter); */
+  /*   fprintf(stderr, "Counter: %d\n", communication_counter); */
   modbus_write_registers(mb_ctx, 0, 1, tab_reg_out);
 }
 
@@ -111,7 +117,7 @@ void main_loop(int interval) {
   /* start after one second */
   timer.tv_sec++;
 
-  while(1) {
+  while(!sigint) {
     /* wait until next shot */
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timer, NULL);
 
@@ -139,18 +145,19 @@ void main_loop(int interval) {
 int main(int argc, char* argv[]) {
   int interval = 50000; /* 50us */
 
-  /* Declare ourself as a real time task */
   rt_begin();
 
-  /* modbus init */
+  if (SIG_ERR == signal(SIGINT, handle_signal)) {
+    fprintf(stderr, "Failed in signal()\n");
+    exit(-1);  
+  }
+
   if(argc>=3) {
     mb_begin(argv[1], atoi(argv[2]));
   } else {
     usage();
   }
-  atexit(mb_end); /* does not work. e.g. SIGINT is not for normal process termination */
 
-  /* interval */
   if(argc>=4) {
     interval = atoi(argv[3]);
   }
@@ -162,4 +169,6 @@ int main(int argc, char* argv[]) {
   fprintf(stderr, "Number of input registers to read: %d\n", num_registers);
 
   main_loop(interval);
+
+  mb_end();
 }

@@ -24,28 +24,32 @@ widths = Counter.new
 
 counts = []
 
-prev = nil
+ARGV.each do |datfile|
 
-while line = gets
-  widths.add(line.chomp.length)
-  vals = line.sub(/^ +/, '').split(/ +/)[0, 6]
-  now = []
-  until vals.empty?
-    now << vals.shift.to_i + Rational(vals.shift, 1_000_000_000)
-  end
-  if prev
-    now.each_index do |i|
-      counts[i] ||= Counter.new
-      counts[i].add(now[i] - prev[i])
+  prev = nil
+
+  IO.foreach(datfile) do |line|
+    widths.add(line.chomp.length)
+    vals = line.sub(/^ +/, '').split(/ +/)[0, 6]
+    now = []
+    until vals.empty?
+      now << vals.shift.to_i + Rational(vals.shift, 1_000_000_000)
     end
+    if prev
+      now.each_index do |i|
+        counts[i] ||= Counter.new
+        counts[i].add(now[i] - prev[i])
+      end
+    end
+    prev = now
   end
-  prev = now
+
 end
 
 [widths, counts].flatten.each do |c|
   cs = c.counts
   tc = 0
-  tcv = 0.0
+  tcv = 0
   cs.keys.sort.each do |cls|
     print cls.to_f
     tc += cs[cls]
