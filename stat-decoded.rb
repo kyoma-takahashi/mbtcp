@@ -20,11 +20,14 @@ class Counter
   end
 end
 
+widths = Counter.new
+
 counts = []
 
 prev = nil
 
 while line = gets
+  widths.add(line.chomp.length)
   vals = line.sub(/^ +/, '').split(/ +/)[0, 6]
   now = []
   until vals.empty?
@@ -39,7 +42,7 @@ while line = gets
   prev = now
 end
 
-counts.each do |c|
+[widths, counts].flatten.each do |c|
   cs = c.counts
   tc = 0
   tcv = 0.0

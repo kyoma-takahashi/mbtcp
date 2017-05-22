@@ -13,7 +13,7 @@ TIME_LENGTH = (TIME_T_LENGTH + LONG_LENGTH) * 3
 TIME_UNPACK = 'Q6'
 TIME_PRINTF = (['%19d', '%9d'] * 3).flatten.join(DELIMITER)
 
-LENGTH_LENGTH = 4
+LENGTH_LENGTH = 2
 
 DATA_LENGTH = 244
 UNPACK = 'seeeeeeeeeeeeeeebeebeebbbbbbbbbbbebbbseeeeeeeeeeeeeeeeeeeeeee'.
@@ -26,7 +26,7 @@ def read_contents
   buffer = ''
   loop do
     return false unless length_b = IN.read(LENGTH_LENGTH)
-    length = length_b.unpack('L').first
+    length = length_b.unpack('v').first
 #     warn "Length:>#{length}<"
     break if 0 == length
     buffer << IN.read(length)

@@ -63,8 +63,8 @@ void mb_rw(void) {
 
   static uint16_t tab_reg_out[1];
 
-  static int zero_len;
-  static int data_len;
+  static unsigned short int zero_len;
+  static unsigned short int data_len;
 
   addr = 0;
   nb_r = num_registers;
@@ -80,11 +80,11 @@ void mb_rw(void) {
     if (rc == -1) {
       fprintf(stderr, "Failed in modbus_read_registers(): %s\n", modbus_strerror(errno));
       zero_len = 0;
-      fwrite(&zero_len, sizeof(int), 1, stdout);
+      fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
     } else {
       data_len = sizeof(uint16_t) * rc;
 /*       fprintf(stderr, "Read: %ld x %d = %d\n", sizeof(uint16_t), rc, data_len); */
-      fwrite(&data_len, sizeof(int), 1, stdout);
+      fwrite(&data_len, sizeof(unsigned short int), 1, stdout);
       fwrite(&tab_reg, sizeof(uint16_t), rc, stdout);
 /*       fprintf(stderr, "Wrote: %d => %ld\n", rc, wrote); */
     }
@@ -93,7 +93,7 @@ void mb_rw(void) {
     addr += nb;
   }
   zero_len = 0;
-  fwrite(&zero_len, sizeof(int), 1, stdout);
+  fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
 
   communication_counter++;
 /*   tab_reg_out[0] = ((communication_counter & 0xff) << 8) | ((communication_counter >> 8) & 0xff); */
@@ -159,7 +159,7 @@ int main(int argc, char* argv[]) {
   if(argc>=5) {
     num_registers = atoi(argv[4]);
   }
-  fprintf(stderr, "Number of holding registers to read: %d\n", num_registers);
+  fprintf(stderr, "Number of input registers to read: %d\n", num_registers);
 
   main_loop(interval);
 }
