@@ -53,14 +53,18 @@ end
   cs.keys.sort.each do |cls|
     print cls.to_f
     tc += cs[cls]
-    tcv += cs[cls] * cls
-    print ' '
-    print tc
     print ' '
     print (1 - tcv / c.total_class).to_f
     puts
+    tcv += cs[cls] * cls
   end
-  print ' '
   puts c.total
+  puts c.total_class.to_f
   puts
+  unless c.total == tc
+    warn "Maybe a bug: Total count mismatch. #{c.total} != #{tc}"
+  end
+  unless c.total_class == tcv
+    warn "Maybe a bug: Total count x class mismatch. #{c.total_class} != #{tcv}"
+  end
 end

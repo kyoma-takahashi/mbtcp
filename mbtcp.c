@@ -1,3 +1,12 @@
+/*
+ * References:
+ *
+ * https://rt.wiki.kernel.org/index.php/RT_PREEMPT_HOWTO#A_Realtime_.22Hello_World.22_Example
+ * http://libmodbus.org/docs/v3.0.6/
+ * https://codezine.jp/article/detail/4700
+ *
+ */
+
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
@@ -22,6 +31,7 @@ void usage(void) {
 }
 
 void handle_signal(int signal) {
+  fprintf(stderr, "Cought SIGINT\n");
   sigint = 1;
 }
 
@@ -121,7 +131,7 @@ void main_loop(int interval) {
     /* wait until next shot */
     clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &timer, NULL);
 
-    clock_gettime(CLOCK_MONOTONIC, &ttooutm);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &ttooutm);
     clock_gettime(CLOCK_REALTIME, &ttooutr);
     fwrite(&timer.tv_sec, sizeof(time_t), 1, stdout);
     fwrite(&timer.tv_nsec, sizeof(long), 1, stdout);
