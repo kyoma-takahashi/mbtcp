@@ -18,7 +18,7 @@
 
 #define NSEC_PER_SEC (1000000000) /* The number of nsecs per sec. */
 
-#define MAX_NUM_REGISTERS (72) /* according to an experiment. */
+#define MAX_NUM_REGISTERS (125) /* according to an experiment. */
 
 modbus_t *mb_ctx;
 int num_registers = 0;
@@ -74,12 +74,12 @@ void mb_rw(void) {
   static int nb_r;
   static int nb;
 
-  static uint16_t tab_reg[64];
+  static uint16_t tab_reg[128];
   static int rc;
 
-  static uint16_t tab_reg_out[1];
+  static uint16_t tab_reg_out[128];
 
-  static unsigned short int zero_len;
+  static unsigned short int zero_len = 0;
   static unsigned short int data_len;
 
   addr = 0;
@@ -95,7 +95,6 @@ void mb_rw(void) {
     rc = modbus_read_input_registers(mb_ctx, addr, nb, tab_reg);
     if (rc == -1) {
       fprintf(stderr, "Failed in modbus_read_registers(): %s\n", modbus_strerror(errno));
-      zero_len = 0;
       fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
     } else {
       data_len = sizeof(uint16_t) * rc;
@@ -108,7 +107,6 @@ void mb_rw(void) {
     nb_r -= nb;
     addr += nb;
   }
-  zero_len = 0;
   fwrite(&zero_len, sizeof(unsigned short int), 1, stdout);
 
   communication_counter++;
