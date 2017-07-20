@@ -17,10 +17,20 @@ LENGTH_LENGTH = 2
 
 DATA_LENGTH = 244
 UNPACK = 'seeeeeeeeeeeeeeebeebeebbbbbbbbbbbebbbseeeeeeeeeeeeeeeeeeeeeee'.
-  gsub('x','x4').gsub('e','g').gsub('b','b8b24').gsub('s','nb16')
+  gsub('x','x4').gsub('e','e').gsub('b','b16b8b8').gsub('s','b16v')
   # e <=> g; s <=> S, n, v; b <=> B
 PRINTF = UNPACK.
   gsub(/x\d*/, '').gsub(/[eg]/,"#{DELIMITER}%+.8e").gsub(/[sSnv]/,"#{DELIMITER}%+6d").gsub(/[bB]\d*/, "#{DELIMITER}%s")
+
+def swap_2bytes(bytes)
+  new = ''
+  until bytes.empty?
+    new << bytes[2,2]
+    new << bytes[0,2]
+    bytes = bytes[4, bytes.length - 4]
+  end
+  new
+end
 
 def read_contents
   buffer = ''
@@ -43,7 +53,7 @@ loop do
 #   warn "Read:>#{data_b.bytesize}<"
 
   if (DATA_LENGTH == data_b.bytesize)
-    OUT.printf(PRINTF, *data_b.unpack(UNPACK))
+    OUT.printf(PRINTF, *swap_2bytes(data_b).unpack(UNPACK))
   else
     OUT.print DELIMITER
     OUT.print data_b.bytesize.to_s
