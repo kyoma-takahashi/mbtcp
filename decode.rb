@@ -10,7 +10,15 @@ DELIMITER = ' '
 TIME_T_LENGTH = 8
 LONG_LENGTH = 8
 TIME_LENGTH = (TIME_T_LENGTH + LONG_LENGTH) * 3
-TIME_UNPACK = 'Q<6'
+TIME_UNPACK = case RUBY_VERSION
+              when '1.8.7'
+                'Q'
+              when '2.3.1'
+                'Q<'
+              else
+                warn 'Unknown whether or not unpack template "Q<" is supported'
+                'Q<'
+              end + '6'
 TIME_PRINTF = (['%19d', '%9d'] * 3).flatten.join(DELIMITER)
 
 LENGTH_LENGTH = 2
