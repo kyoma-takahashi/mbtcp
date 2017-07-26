@@ -1,5 +1,14 @@
 #!/usr/bin/ruby
 
+case RUBY_VERSION
+when '1.8.7'
+  require 'rational'
+when '2.3.1'
+  # ok
+else
+  warn "#{RUBY_VERSION} not supported"
+end
+
 class Counter
   attr_reader :counts, :total_class
   def initialize
@@ -33,7 +42,7 @@ ARGV.each do |datfile|
     vals = line.sub(/^ +/, '').split(/ +/)[0, 6]
     now = []
     until vals.empty?
-      now << vals.shift.to_i + Rational(vals.shift, 1_000_000_000)
+      now << vals.shift.to_i + Rational(vals.shift.to_i, 1_000_000_000)
     end
     if prev
       now.each_index do |i|
