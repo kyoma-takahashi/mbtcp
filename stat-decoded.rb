@@ -10,26 +10,42 @@ else
 end
 
 class Counter
-  attr_reader :counts, :total_class
-  def initialize
+  attr_reader :counts, :total_class_prerounded, :total_class
+
+  def initialize(round_factor = nil)
+    @round_factor = round_factor
     @counts = {}
-    @total_class = nil;
+    @total_class = nil
+    @total_class_prerounded = nil
   end
-  def add(cls)
-    @counts[cls] ||= 0
-    @counts[cls] += 1
-    if @total_class
-      @total_class += cls
+
+  def round(cls)
+    if @round_factor
+      Rational((cls * @round_factor).ceil, @round_factor)
     else
-      @total_class = cls
+      cls
     end
   end
+
+  def add(cls)
+    rounded = round(cls)
+    @counts[rounded] ||= 0
+    @counts[rounded] += 1
+    @total_class ||= 0
+    @total_class += rounded
+    @total_class_prerounded ||= 0
+    @total_class_prerounded += cls
+  end
+
   def total
     @counts.values.inject(0) {|r,i| r + i}
   end
 end
 
 widths = Counter.new
+
+PROGRESS_STEP = 100_000_000
+progress_next = 0
 
 counts = []
 
@@ -46,11 +62,16 @@ ARGV.each do |datfile|
     end
     if prev
       now.each_index do |i|
-        counts[i] ||= Counter.new
+        counts[i] ||= Counter.new(1_000_0)
         counts[i].add(now[i] - prev[i])
       end
     end
     prev = now
+
+    if widths.total_class_prerounded > progress_next
+      warn "#{Time.now.strftime('%FT%T%z')} #{widths.total_class_prerounded} #{datfile}"
+      progress_next = widths.total_class_prerounded + PROGRESS_STEP
+    end
   end
 
 end
@@ -68,7 +89,7 @@ end
     tcv += cs[cls] * cls
   end
   puts c.total
-  puts c.total_class.to_f
+  puts c.total_class_prerounded.to_f
   puts
   unless c.total == tc
     warn "Maybe a bug: Total count mismatch. #{c.total} != #{tc}"
